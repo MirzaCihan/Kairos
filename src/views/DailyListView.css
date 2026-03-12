@@ -1,0 +1,181 @@
+.daily-list {
+  padding: var(--space-xl);
+  max-width: 800px;
+  margin: 0 auto;
+  animation: fadeIn var(--duration-normal) var(--ease-out);
+}
+
+/* ── Header ── */
+.daily-list__header {
+  margin-bottom: var(--space-xl);
+}
+
+.daily-list__date {
+  font-family: var(--font-primary);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.daily-list__subtitle {
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  margin-top: var(--space-xxs);
+}
+
+/* ── Stats ── */
+.daily-list__stats {
+  display: flex;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.daily-list__stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  flex: 1;
+}
+
+.daily-list__stat-value {
+  font-family: var(--font-primary);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.daily-list__stat-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.daily-list__stat-icon {
+  font-size: var(--text-xl);
+  flex-shrink: 0;
+}
+
+/* ── Progress ── */
+.daily-list__progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(108, 60, 225, 0.1);
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-xl);
+  overflow: hidden;
+}
+
+.daily-list__progress-fill {
+  height: 100%;
+  background: var(--accent-gradient);
+  border-radius: var(--radius-full);
+  transition: width 0.5s var(--ease-out);
+}
+
+/* ── Section ── */
+.daily-list__section {
+  margin-bottom: var(--space-xl);
+}
+
+.daily-list__section-title {
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-sm);
+  padding-left: var(--space-xs);
+}
+
+/* ── Task List ── */
+.daily-list__tasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+/* ── Empty State ── */
+.daily-list__empty {
+  text-align: center;
+  padding: var(--space-3xl) var(--space-xl);
+  animation: fadeIn var(--duration-slow) var(--ease-out);
+}
+
+.daily-list__empty-icon {
+  font-size: 64px;
+  margin-bottom: var(--space-md);
+  display: block;
+}
+
+.daily-list__empty-title {
+  font-family: var(--font-primary);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.daily-list__empty-text {
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.daily-list__add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* ── Time Indicator ── */
+.daily-list__now {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+}
+
+.daily-list__now-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-coral);
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.5);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.daily-list__now-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent-coral), transparent);
+}
+
+.daily-list__now-time {
+  font-size: var(--text-xs);
+  color: var(--accent-coral);
+  font-family: var(--font-mono);
+}
+
+@media (max-width: 640px) {
+  .daily-list {
+    padding: var(--space-md);
+  }
+
+  .daily-list__stats {
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .daily-list__date {
+    font-size: var(--text-2xl);
+  }
+}
