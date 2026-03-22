@@ -1,5 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { TaskProvider, useTaskContext } from './context/TaskContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginView from './views/auth/LoginView';
+import RegisterView from './views/auth/RegisterView';
+import ForgotPasswordView from './views/auth/ForgotPasswordView';
+import ResetPasswordView from './views/auth/ResetPasswordView';
 import AnimatedBackground from './components/AnimatedBackground';
 import Sidebar from './components/Sidebar';
 import TaskModal from './components/TaskModal';
@@ -12,6 +17,7 @@ import './App.css';
 
 function AppContent() {
   const { isFirstRun, clearFirstRun, settings } = useTaskContext();
+  const { signOut } = useAuth();
   const [currentView, setCurrentView] = useState('daily');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -185,14 +191,123 @@ function AppContent() {
         editTask={editingTask}
         selectedDate={selectedDate}
       />
+
+      {/* Floating Logout Button */}
+      <button
+        className="app__logout-fab"
+        onClick={() => signOut()}
+        title="Log out"
+      >
+        <span>🚪</span>
+        <span>Log out</span>
+      </button>
     </>
   );
 }
 
+function AuthRouter() {
+  const { user, loading } = useAuth();
+  const [authView, setAuthView] = useState('login');
+
+  // Detect password reset URL hash
+  useEffect(() => {
+    if (window.location.hash.includes('reset-password')) {
+      setAuthView('reset-password');
+    }
+  }, []);
+
+  // Still checking session
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '20px',
+        background: '#0a0a1a',
+      }}>
+        <img
+          src="/logo.png"
+          alt="Kairos"
+          style={{
+            width: '72px',
+            height: '72px',
+            filter: 'drop-shadow(0 0 20px rgba(168, 85, 247, 0.5))',
+            animation: 'pulse 1.8s ease-in-out infinite',
+          }}
+        />
+        <div style={{
+          fontFamily: "'Outfit', sans-serif",
+          fontSize: '1.4rem',
+          fontWeight: 600,
+          background: 'linear-gradient(135deg, #a855f7, #6c3ce1)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        }}>
+          Kairos
+        </div>
+        <div style={{
+          width: '120px',
+          height: '3px',
+          borderRadius: '4px',
+          background: 'rgba(168, 85, 247, 0.15)',
+          overflow: 'hidden',
+          position: 'relative',
+        }}>
+          <div style={{
+            position: 'absolute',
+            height: '100%',
+            width: '50%',
+            borderRadius: '4px',
+            background: 'linear-gradient(90deg, #a855f7, #6c3ce1)',
+            animation: 'shimmer 1.2s ease-in-out infinite alternate',
+          }} />
+        </div>
+      </div>
+    );
+  }
+
+  // Authenticated → show the app
+  if (user) {
+    // If the user navigated to reset-password while logged in
+    if (authView === 'reset-password') {
+      return (
+        <ResetPasswordView onNavigate={(view) => {
+          if (view === 'app') setAuthView('app');
+          else setAuthView(view);
+        }} />
+      );
+    }
+
+    return (
+      <TaskProvider>
+        <AppContent />
+      </TaskProvider>
+    );
+  }
+
+  // Not authenticated → show auth views
+  switch (authView) {
+    case 'register':
+      return <RegisterView onNavigate={setAuthView} />;
+    case 'forgot-password':
+      return <ForgotPasswordView onNavigate={setAuthView} />;
+    case 'reset-password':
+      return <ResetPasswordView onNavigate={setAuthView} />;
+    case 'login':
+    default:
+      return <LoginView onNavigate={setAuthView} />;
+  }
+}
+
 export default function App() {
   return (
-    <TaskProvider>
-      <AppContent />
-    </TaskProvider>
+    <AuthProvider>
+      <AuthRouter />
+    </AuthProvider>
   );
 }

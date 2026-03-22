@@ -30,13 +30,62 @@ export default function WeeklyCalendarView({ selectedDate, onEditTask, onAddTask
     }));
   }, [tasks, weekStart]);
 
-  // Calculate task block position
-  const getTaskBlockStyle = (task) => {
+  // Calculate overlap groups for a set of tasks
+  const getOverlapGroups = (dayTasks) => {
+    if (!dayTasks.length) return [];
+    const sorted = [...dayTasks].sort((a, b) => a.startTime - b.startTime || a.endTime - b.endTime);
+    const groups = []; // each group: { tasks: [], columns: Map<taskId, colIndex>, totalCols }
+    let currentGroup = null;
+
+    sorted.forEach(task => {
+      if (!currentGroup || task.startTime >= currentGroup.end) {
+        // Start a new group
+        currentGroup = { tasks: [task], end: task.endTime, columns: new Map(), totalCols: 1 };
+        currentGroup.columns.set(task.id, 0);
+        groups.push(currentGroup);
+      } else {
+        // This task overlaps with the current group
+        currentGroup.tasks.push(task);
+        currentGroup.end = Math.max(currentGroup.end, task.endTime);
+        // Find the first available column
+        const usedCols = new Set();
+        currentGroup.tasks.forEach(t => {
+          if (t.id !== task.id && currentGroup.columns.has(t.id)) {
+            // Check if this task actually overlaps with the new task
+            if (t.startTime < task.endTime && t.endTime > task.startTime) {
+              usedCols.add(currentGroup.columns.get(t.id));
+            }
+          }
+        });
+        let col = 0;
+        while (usedCols.has(col)) col++;
+        currentGroup.columns.set(task.id, col);
+        currentGroup.totalCols = Math.max(currentGroup.totalCols, col + 1);
+      }
+    });
+    return groups;
+  };
+
+  // Calculate task block position with overlap support
+  const getTaskBlockStyle = (task, overlapInfo) => {
     const startOffset = task.startTime - settings.dayStart;
     const duration = task.endTime - task.startTime;
     const rowHeight = 60; // var(--segment-row-height)
     const top = (startOffset / settings.granularity) * rowHeight;
     const height = (duration / settings.granularity) * rowHeight;
+
+    if (overlapInfo && overlapInfo.totalCols > 1) {
+      const colWidth = 100 / overlapInfo.totalCols;
+      const leftPct = overlapInfo.colIndex * colWidth;
+      return {
+        top: `${top}px`,
+        height: `${Math.max(height - 2, 18)}px`,
+        left: `calc(${leftPct}% + 1px)`,
+        right: `calc(${100 - leftPct - colWidth}% + 1px)`,
+        width: 'auto',
+      };
+    }
+
     return { top: `${top}px`, height: `${Math.max(height - 2, 18)}px` };
   };
 
@@ -110,33 +159,48 @@ export default function WeeklyCalendarView({ selectedDate, onEditTask, onAddTask
                 ))}
 
                 {/* Task blocks */}
-                {dayData.tasks.map((task, taskIdx) => {
-                  if (task.startTime < settings.dayStart || task.startTime >= settings.dayEnd) return null;
-                  const style = getTaskBlockStyle(task);
-                  const catColor = getCatColor(task.category);
-                  const isComp = completions[`${task.id}_${dayData.dateKey}`];
+                {(() => {
+                  const overlapGroups = getOverlapGroups(dayData.tasks);
+                  // Build a lookup: taskId → { colIndex, totalCols }
+                  const overlapMap = new Map();
+                  overlapGroups.forEach(group => {
+                    group.tasks.forEach(t => {
+                      overlapMap.set(t.id, {
+                        colIndex: group.columns.get(t.id),
+                        totalCols: group.totalCols,
+                      });
+                    });
+                  });
 
-                  return (
-                    <div
-                      key={`${task.id}-${taskIdx}`}
-                      className={`weekly-calendar__task-block ${isComp ? 'weekly-calendar__task-block--completed' : ''}`}
-                      style={{
-                        ...style,
-                        background: `linear-gradient(135deg, ${catColor}, color-mix(in srgb, ${catColor} 70%, black))`,
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditTask(task);
-                      }}
-                      title={`${task.name}\n${formatTimeDisplay(task.startTime)} – ${formatTimeDisplay(task.endTime)}`}
-                    >
-                      <div className="weekly-calendar__task-block-name">{task.name}</div>
-                      <div className="weekly-calendar__task-block-time">
-                        {formatTimeDisplay(task.startTime)}
+                  return dayData.tasks.map((task, taskIdx) => {
+                    if (task.startTime < settings.dayStart || task.startTime >= settings.dayEnd) return null;
+                    const overlapInfo = overlapMap.get(task.id);
+                    const style = getTaskBlockStyle(task, overlapInfo);
+                    const catColor = getCatColor(task.category);
+                    const isComp = completions[`${task.id}_${dayData.dateKey}`];
+
+                    return (
+                      <div
+                        key={`${task.id}-${taskIdx}`}
+                        className={`weekly-calendar__task-block ${isComp ? 'weekly-calendar__task-block--completed' : ''}`}
+                        style={{
+                          ...style,
+                          background: `linear-gradient(135deg, ${catColor}, color-mix(in srgb, ${catColor} 70%, black))`,
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditTask(task);
+                        }}
+                        title={`${task.name}\n${formatTimeDisplay(task.startTime)} – ${formatTimeDisplay(task.endTime)}`}
+                      >
+                        <div className="weekly-calendar__task-block-name">{task.name}</div>
+                        <div className="weekly-calendar__task-block-time">
+                          {formatTimeDisplay(task.startTime)}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
 
                 {/* Now line */}
                 {todayCol && nowLinePos !== null && (
